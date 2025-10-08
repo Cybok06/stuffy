@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Notification • Stockly</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --ink:#171717; --muted:#6b7280; --ring:#e6e8ef;
+    --card:#fff; --success:#0a7a5e; --success-pill:#e8f7f0;
+    --accent:#6f2cff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+
+  .topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg)}
+  .back{width:44px;height:44px;border-radius:999px;background:#fff;border:1px solid var(--ring);display:grid;place-items:center;cursor:pointer}
+  .back svg{width:18px;height:18px}
+  .title{margin:0 auto;font-size:28px;font-weight:800}
+  .wrap{max-width:860px;margin:0 auto;padding:8px 16px 24px}
+
+  .day{margin-top:14px;margin-bottom:6px;font-weight:800;color:#374151}
+  .list{display:grid;gap:12px}
+
+  .card{
+    background:var(--card); border:1px solid var(--ring); border-radius:16px; padding:14px 16px;
+    display:grid; grid-template-columns:1fr auto; gap:8px;
+  }
+  .name{margin:6px 0 4px;font-weight:800}
+  .line{margin:0;color:var(--muted)}
+  .badge{
+    align-self:center; justify-self:end; padding:6px 12px; font-weight:800; border-radius:999px;
+    background:var(--success-pill); color:var(--success); border:1px solid #cceee0; white-space:nowrap
+  }
+  .empty{color:var(--muted);text-align:center;margin:24px 0}
+</style>
+</head>
+<body>
+   <!-- Bootstrap 5 (CDN) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+  :root{
+    --sb-w: 264px;
+    --sb-bg: #ffffff;
+    --sb-ring: #e6e8ef;
+  }
+
+  /* Only push content when the sidebar is open on desktop */
+  @media (min-width: 992px){
+    body.sidebar-open{ margin-left: var(--sb-w); transition: margin-left .28s cubic-bezier(.22,.98,.2,1); }
+  }
+
+  /* Sidebar size */
+  #appSidebar{
+    width: var(--sb-w);
+    background: var(--sb-bg);
+    border-right: 1px solid var(--sb-ring);
+  }
+  @media (max-width: 991.98px){
+    #appSidebar{ width: min(86vw, 320px); }
+  }
+
+  /* Hide Bootstrap backdrop on desktop (we push the layout instead) */
+  @media (min-width: 992px){
+    .offcanvas-backdrop{ display:none !important; }
+  }
+
+  /* Hamburger launcher (show on ALL sizes so desktop can toggle too) */
+  #sbToggle{
+    position: fixed; left: 12px; top: 12px; z-index: 1056;
+    border: 1px solid var(--sb-ring);
+    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+  }
+
+  /* Small visual polish */
+  .sb-brand{
+    display:flex; align-items:center; gap:10px; font-weight:900;
+  }
+  .sb-logo{
+    width:36px; height:36px; border-radius:10px; background:#6f2cff; color:#fff;
+    display:grid; place-items:center;
+  }
+  .sb-user{ border:1px solid var(--sb-ring); }
+  .sb-badge{ font-weight:700; border:1px solid var(--sb-ring); }
+</style>
+
+<!-- Toggle button (works on mobile & desktop) -->
+<button id="sbToggle" class="btn btn-light" type="button"
+        data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="Open menu">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<!-- Sidebar -->
+<div id="appSidebar"
+     class="offcanvas offcanvas-start"
+     data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" aria-labelledby="appSidebarLabel">
+
+  <div class="offcanvas-header border-bottom">
+    <div class="sb-brand">
+      <div class="fs-5"></div>
+    </div>
+    <!-- Show the close button on ALL sizes so desktop can close too -->
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+
+  <div class="offcanvas-body d-flex flex-column pt-3 pb-3">
+    <!-- Quick search (routes to Inventory) -->
+    <div class="input-group mb-3">
+      <span class="input-group-text bg-white border-end-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+      </span>
+      <input id="sbSearch" type="search" class="form-control border-start-0" placeholder="Quick search products…">
+    </div>
+
+    <!-- Nav -->
+    <ul class="nav nav-pills flex-column gap-1 mb-3" id="sbNav">
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="dashboard.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 13l3 3 7-7"/></svg>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center justify-content-between" href="products.html" data-link>
+          <span class="d-flex align-items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Inventory
+          </span>
+          <span id="sbLow" class="badge rounded-pill sb-badge text-bg-warning-subtle d-none">0 low</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="make_sale.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1 7H7z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+          <span>Make sale</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="sales_history.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 13l3 3 7-7"/></svg>
+          <span>Sales history</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center justify-content-between" href="notifications.html" data-link>
+          <span class="d-flex align-items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            Notifications
+          </span>
+          <span id="sbNotif" class="badge rounded-pill sb-badge text-bg-info-subtle d-none">0</span>
+        </a>
+      </li>
+
+      <li><hr class="dropdown-divider my-2"></li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="settings.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V22a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09a1.65 1.65 0 001.51-1z"/></svg>
+          <span>Settings</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="help.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+          <span>Help & support</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- User box -->
+    <div class="card sb-user mt-auto">
+      <div class="card-body d-flex align-items-center gap-2">
+        <div id="sbAvatar" class="rounded-3 bg-primary-subtle text-primary-emphasis fw-bold d-inline-grid place-items-center"
+             style="width:38px;height:38px;">S</div>
+        <div class="flex-grow-1">
+          <div id="sbUname" class="fw-bold">—</div>
+          <div id="sbUemail" class="text-muted small">—</div>
+        </div>
+        <button id="sbLogout" class="btn btn-outline-secondary btn-sm">Log out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Keys used across the app
+  const CURRENT_KEY  = 'stockly_current_user';
+  const PRODUCTS_KEY = 'stockly_products_v1';
+  const NOTIFS_KEY   = 'stockly_notifs_v1';
+
+  const ocEl = document.getElementById('appSidebar');
+
+  // When the offcanvas opens/closes, toggle a class on <body> (desktop layout push)
+  ocEl.addEventListener('shown.bs.offcanvas', ()=> document.body.classList.add('sidebar-open'));
+  ocEl.addEventListener('hidden.bs.offcanvas', ()=> document.body.classList.remove('sidebar-open'));
+
+  // Highlight active link
+  const current = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+  document.querySelectorAll('#appSidebar a[data-link]').forEach(a=>{
+    if ((a.getAttribute('href')||'').toLowerCase() === current) a.classList.add('active');
+  });
+
+  // Fill user box
+  let user=null; try{ user = JSON.parse(localStorage.getItem(CURRENT_KEY)||'null'); }catch(e){}
+  const uname = document.getElementById('sbUname');
+  const uemail= document.getElementById('sbUemail');
+  const avatar= document.getElementById('sbAvatar');
+  if(user && user.name){
+    uname.textContent = user.name;
+    uemail.textContent = user.email || '';
+    avatar.textContent = (user.name[0]||'S').toUpperCase();
+  }else{
+    uname.textContent = 'Guest'; uemail.textContent = 'Not signed in'; avatar.textContent='S';
+  }
+
+  // Badges: low/out & notifications
+  (function updateBadges(){
+    const lowEl = document.getElementById('sbLow');
+    const notifEl = document.getElementById('sbNotif');
+
+    let low=0, out=0;
+    try{
+      const prods = JSON.parse(localStorage.getItem(PRODUCTS_KEY)||'[]');
+      const mine  = user?.id ? prods.filter(p=>p.ownerId===user.id) : prods;
+      for(const p of mine){
+        const q = Number(p.qty)||0;
+        if(q===0) out++; else if(q<=4) low++;
+      }
+    }catch(e){}
+    if(low>0 || out>0){
+      lowEl.classList.remove('d-none');
+      lowEl.textContent = `${low} low${out?`, ${out} out`:''}`;
+      if(out>0){ lowEl.classList.add('text-bg-danger-subtle'); }
+    }
+
+    let count=0;
+    try{
+      const ns = JSON.parse(localStorage.getItem(NOTIFS_KEY)||'[]');
+      const since = Date.now() - 30*86400000;
+      count = ns.filter(n => (!user?.id || n.ownerId===user.id) && (n.createdAtMs||0) >= since).length;
+    }catch(e){}
+    if(count>0){
+      notifEl.classList.remove('d-none');
+      notifEl.textContent = String(count);
+    }
+  })();
+
+  // Quick search → Inventory page
+  document.getElementById('sbSearch')?.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){
+      const q = (e.currentTarget.value || '').trim();
+      location.href = q ? ('products.html#q=' + encodeURIComponent(q)) : 'products.html';
+      const oc = bootstrap.Offcanvas.getInstance(ocEl);
+      oc?.hide();
+    }
+  });
+
+  // Logout
+  document.getElementById('sbLogout')?.addEventListener('click', ()=>{
+    localStorage.removeItem(CURRENT_KEY);
+    location.href = 'login.html';
+  });
+})();
+</script>
+
+  <header class="topbar">
+    <button class="back" onclick="history.back()" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <h1 class="title">Notification</h1>
+    <span style="width:44px"></span>
+  </header>
+
+  <main class="wrap">
+    <div id="container"></div>
+    <div id="empty" class="empty" style="display:none">No notifications yet.</div>
+  </main>
+
+<script>
+  // Keys used across your app
+  const CURRENT_KEY  = 'stockly_current_user';
+  const PRODUCTS_KEY = 'stockly_products_v1';
+  const SALES_KEY    = 'stockly_sales_v1';
+
+  // Auth guard
+  let current=null; try{ current = JSON.parse(localStorage.getItem(CURRENT_KEY)||'null'); }catch(e){}
+  if(!current){ location.href='login.html'; }
+
+  // Helpers
+  const fmtMoney   = n => `₵ ${(Number(n)||0).toFixed(2)}`;
+  const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dayLabel   = d => {
+    const today = new Date(), yest = new Date(Date.now()-86400000);
+    const s = startOfDay(d).getTime();
+    if (s===startOfDay(today).getTime()) return 'Today';
+    if (s===startOfDay(yest).getTime())  return 'Yesterday';
+    return d.toLocaleDateString(undefined,{month:'long', day:'numeric', year:'numeric'});
+  };
+
+  function read(key){ try { return JSON.parse(localStorage.getItem(key)) || []; } catch(e){ return []; } }
+
+  // Build feed from saved data
+  function buildFeed(){
+    const sales = read(SALES_KEY)
+      .filter(s => s.ownerId===current.id)
+      .map(s => ({
+        type: 'sale',
+        createdAtMs: s.createdAtMs || Date.parse(s.createdAt) || 0,
+        name: s.product?.name || 'Sale',
+        qty: Number(s.qty)||1,
+        unitPrice: Number(s.unitPrice)||0
+      }));
+
+    const products = read(PRODUCTS_KEY)
+      .filter(p => p.ownerId===current.id)
+      .map(p => ({
+        type: 'product_added',
+        createdAtMs: p.createdAtMs || Date.parse(p.createdAt) || 0,
+        name: p.name,
+        qty: Number(p.qty)||0,
+        unitPrice: Number(p.price)||0
+      }));
+
+    return [...sales, ...products].sort((a,b)=>b.createdAtMs-a.createdAtMs);
+  }
+
+  // Render
+  const container = document.getElementById('container');
+  const emptyEl   = document.getElementById('empty');
+
+  function render(){
+    const feed = buildFeed();
+    container.innerHTML='';
+    if(!feed.length){ emptyEl.style.display='block'; return; }
+    emptyEl.style.display='none';
+
+    let currentDay='';
+    let listEl=null;
+
+    for(const n of feed){
+      const d = new Date(n.createdAtMs || Date.now());
+      const label = dayLabel(d);
+
+      // new day group
+      const dayKey = startOfDay(d).toISOString();
+      if(dayKey !== currentDay){
+        currentDay = dayKey;
+        const day = document.createElement('div');
+        day.className = 'day';
+        day.textContent = label;
+        container.appendChild(day);
+
+        listEl = document.createElement('div');
+        listEl.className = 'list';
+        container.appendChild(listEl);
+      }
+
+      // content
+      const timeStr = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      // Subtitle varies by type but always shows time + unit price
+      let sub = `${timeStr} • ${fmtMoney(n.unitPrice)} each`;
+      let badge = '';
+      if(n.type === 'sale'){
+        badge = `${n.qty} ${n.qty>1?'sales':'sale'}`;
+      }else if(n.type === 'product_added'){
+        badge = 'new product';
+        // add qty info to line if > 0
+        if(n.qty>0) sub = `${timeStr} • ${fmtMoney(n.unitPrice)} each • ${n.qty} added`;
+      }
+
+      card.innerHTML = `
+        <div>
+          <div class="name">${n.name}</div>
+          <p class="line">${sub}</p>
+        </div>
+        <div class="badge">${badge}</div>
+      `;
+      listEl.appendChild(card);
+    }
+  }
+
+  render();
+</script>
+<script>
+  // inject the sidebar
+  fetch('sidebar.html')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebar-mount').outerHTML = html;
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Success • Stockly</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --ink:#171717; --muted:#6b7280;
+      --primary:#6f2cff; --ring:#e6e8ef;
+      --ok:#0f766e; /* teal/green */
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+
+    .wrap{min-height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:24px}
+    .badge{
+      width:108px; height:108px; border-radius:28px; background:var(--ok);
+      display:grid; place-items:center; color:#fff;
+      box-shadow:0 10px 28px rgba(15,118,110,.25);
+      animation:pop .4s ease-out both;
+    }
+    .badge svg{width:52px; height:52px}
+    @keyframes pop{0%{transform:scale(.8); opacity:.0} 100%{transform:scale(1); opacity:1}}
+
+    h1{margin:10px 0 4px; font-size:32px; text-align:center}
+    p{margin:0; text-align:center; color:var(--muted); font-size:16px; line-height:1.55; max-width:36ch}
+
+    .btn{
+      -webkit-tap-highlight-color: transparent;
+      border:1px solid transparent; border-radius:18px;
+      padding:14px 18px; font-weight:700; font-size:16px;
+      background:var(--primary); color:#fff; cursor:pointer;
+      width:min(520px, 92vw); margin-top:28px;
+    }
+    .hint{color:#6b7280; font-size:14px; margin-top:8px}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 1 0 7.78l-7.78 7.78a2 2 0 0 1-2.83 0L3.39 13.33a5.5 5.5 0 0 1 7.78-7.78l.83.83.83-.83a5.5 5.5 0 0 1 7.01-.14z" stroke="none"/>
+        <polyline points="20 6 9 17 4 12" stroke="#fff" stroke-width="2.5" fill="none"/>
+      </svg>
+    </div>
+
+    <h1>Success!</h1>
+    <p id="msg">You have successfully created a Stockly account.</p>
+
+    <button id="homeBtn" class="btn" type="button">Home</button>
+    <div class="hint" id="hint">Redirecting to login…</div>
+  </main>
+
+  <script>
+    // Button goes to login immediately; auto-redirect after 2s
+    const LOGIN_URL = 'login.html';
+    document.getElementById('homeBtn').addEventListener('click', () => location.href = LOGIN_URL);
+
+    // Personalize message if we have the name
+    try {
+      const name = localStorage.getItem('stockly_last_signup_name');
+      if (name) {
+        document.getElementById('msg').textContent = `You have successfully created a Stockly account, ${name}.`;
+        // clear name token
+        localStorage.removeItem('stockly_last_signup_name');
+      }
+    } catch (e) {}
+
+    setTimeout(() => { location.href = LOGIN_URL; }, 2000);
+  </script>
+  <script>
+  // inject the sidebar
+  fetch('sidebar.html')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebar-mount').outerHTML = html;
+    });
+</script>
+</body>
+</html>

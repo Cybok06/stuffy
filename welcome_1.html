@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Welcome • Stuffy</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --ink:#171717;
+      --muted:#6b7280;
+      --primary:#6f2cff;        /* purple for CTA */
+      --primary-2:#5b22d1;
+      --card:#ffffff;
+      --dot:#d9d2ff;
+      --dot-active:#6f2cff;
+      --ring:#ececf3;
+      --shadow:0 8px 30px rgba(0,0,0,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+    }
+
+    .wrap{
+      min-height:100dvh;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:flex-start;
+      padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      gap:22px;
+    }
+
+    /* Illustration block (no extra shapes behind) */
+    .illu{
+      margin-top:12px;
+      width:min(520px, 88vw);
+      display:grid; place-items:center;
+    }
+    .hero-img{
+      width:86%;
+      height:auto;
+      display:block;
+      object-fit:contain;       /* keep original round PNG as-is */
+      /* optional soft shadow without adding a background shape */
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,.06));
+    }
+
+    h1{
+      margin:6px 0 8px; text-align:center;
+      font-size:28px; line-height:1.15; font-weight:700;
+      letter-spacing:.2px;
+    }
+    .lead{
+      color:var(--muted); text-align:center;
+      font-size:16px; line-height:1.55;
+      max-width:640px; margin:0 auto;
+      padding:0 6px;
+    }
+
+    /* Pager dots */
+    .dots{
+      display:flex; align-items:center; justify-content:center;
+      gap:10px; margin:22px 0 6px;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background:var(--dot); transition:all .2s ease;
+    }
+    .dot.active{
+      width:8px; height:8px; background:var(--dot-active);
+      transform: scale(1.1);
+      box-shadow: 0 0 0 6px rgba(111,44,255,.10);
+    }
+
+    /* Buttons */
+    .actions{
+      width:100%;
+      max-width:640px;
+      display:grid; gap:12px;
+      margin-top:10px;
+    }
+    .btn{
+      -webkit-tap-highlight-color: transparent;
+      border:1px solid transparent;
+      border-radius:16px; padding:16px 18px;
+      font-weight:700; font-size:16px;
+      text-align:center; cursor:pointer;
+      box-shadow: var(--shadow);
+    }
+    .btn-primary{
+      background:var(--primary); color:#fff; border-color:transparent;
+    }
+    .btn-primary:active{ transform: translateY(1px) }
+    .btn-primary:hover{ background:var(--primary-2) }
+    .btn-ghost{
+      background:#fff; color:var(--ink); border-color:var(--ring);
+    }
+    .btn-ghost:hover{ background:#fafafa }
+
+    @media (max-width:420px){
+      h1{ font-size:24px }
+      .lead{ font-size:15px }
+      .actions .btn{ padding:15px 16px }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Illustration (PNG is already round; no background circles) -->
+    <div class="illu">
+      <img class="hero-img" src="images/welcome_1.png" alt="Friendly assistant waving with a tablet" />
+    </div>
+
+    <!-- Content -->
+    <h1>Welcome to Stuffy</h1>
+    <p class="lead">
+      Your smart inventory assistant, made just for boutique owners.
+      Track your stock, manage sales.
+    </p>
+
+    <!-- Pager -->
+    <div class="dots" role="tablist" aria-label="Onboarding progress">
+      <span class="dot active" aria-current="step" aria-label="Step 1 of 3"></span>
+      <span class="dot" aria-label="Step 2 of 3"></span>
+      <span class="dot" aria-label="Step 3 of 3"></span>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button id="btnNext" class="btn btn-primary" type="button">Next</button>
+      <button id="btnSkip" class="btn btn-ghost" type="button">Skip</button>
+    </div>
+  </div>
+
+  <script>
+    // Onboarding state in LocalStorage
+    const KEY_STEP = 'stockly_onboarding_step';
+    const KEY_DONE = 'stockly_onboarding_done';
+
+    // Configure destinations
+    const NEXT_URL = 'welcome_2.html';          // change if different
+    const DASHBOARD_URL = 'index.html#/dashboard';
+
+    // Set current step on load
+    try { localStorage.setItem(KEY_STEP, '1'); } catch(e){}
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+      try { localStorage.setItem(KEY_STEP, '2'); } catch(e){}
+      location.href = NEXT_URL;
+    });
+
+    document.getElementById('btnSkip').addEventListener('click', () => {
+      try {
+        localStorage.setItem(KEY_DONE, 'true');
+        localStorage.removeItem(KEY_STEP);
+      } catch(e){}
+      location.href = DASHBOARD_URL;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Sales history • Stockly</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --ink:#171717; --muted:#6b7280; --ring:#e6e8ef; --ring2:#dfe3ea;
+    --card:#fff; --primary:#6f2cff; --primary-2:#5b22d1; --shadow:0 10px 30px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+
+  .wrap{min-height:100dvh;display:flex;flex-direction:column}
+  .topbar{
+    display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);
+    border-bottom:1px solid var(--ring);position:sticky;top:0;z-index:10
+  }
+  .back{width:40px;height:40px;border-radius:999px;background:#fff;display:grid;place-items:center;border:1px solid var(--ring);cursor:pointer}
+  .back svg{width:18px;height:18px}
+  .title{margin:0 auto;font-weight:800}
+  .make{border:1px solid var(--ring);background:#fff;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}
+  .make:hover{background:#fafafa}
+
+  .content{padding:16px;display:grid;gap:14px;max-width:900px;margin:0 auto;width:100%}
+
+  /* Summary cards */
+  .summary{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:620px){ .summary{grid-template-columns:repeat(3,1fr)} }
+  .card{background:#fff;border:1px solid var(--ring);border-radius:14px;padding:14px 16px;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+  .card h4{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  .metric{margin:0;font-size:22px;font-weight:800}
+
+  /* Filters */
+  .filters{
+    background:#fff;border:1px solid var(--ring);border-radius:14px;padding:12px;display:grid;gap:10px
+  }
+  .row{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:680px){ .row{grid-template-columns:2fr 1fr 1fr auto} }
+  .search{display:flex;align-items:center;gap:10px;border:1px solid var(--ring);border-radius:10px;padding:10px 12px}
+  .search input{border:none;outline:none;flex:1;background:transparent}
+  .input{border:1px solid var(--ring);border-radius:10px;padding:10px 12px}
+  .btn{border:1px solid var(--ring);background:#fff;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
+  .btn:hover{background:#fafafa}
+  .btn-primary{border-color:transparent;background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-2)}
+  .muted{color:var(--muted);font-size:13px}
+
+  /* List */
+  .group{margin-top:6px}
+  .ghead{
+    position:sticky;top:66px;background:var(--bg);padding:6px 2px;margin:0;color:#374151;font-weight:800
+  }
+  .list{display:grid;gap:10px}
+  .rowitem{
+    display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;background:#fff;
+    border:1px solid var(--ring);border-radius:12px;padding:12px;box-shadow:0 1px 0 rgba(0,0,0,.02)
+  }
+  .thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f0f2f6;border:1px solid var(--ring)}
+  .name{margin:0 0 4px;font-weight:800}
+  .sub{margin:0;color:var(--muted);font-size:13px}
+  .total{font-weight:800}
+  .empty{color:var(--muted);text-align:center;margin:26px 0}
+
+  /* Export toast */
+  .toast{position:fixed;left:16px;right:16px;bottom:16px;margin:auto;max-width:640px;background:#ecfdf5;border:1px solid #c8f5e8;border-radius:12px;padding:12px 14px;display:none}
+  .toast.show{display:block;animation:fade .25s ease-out both}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none}}
+
+</style>
+</head>
+<body>
+  <!-- Bootstrap 5 (CDN) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+  :root{
+    --sb-w: 264px;
+    --sb-bg: #ffffff;
+    --sb-ring: #e6e8ef;
+  }
+
+  /* Only push content when the sidebar is open on desktop */
+  @media (min-width: 992px){
+    body.sidebar-open{ margin-left: var(--sb-w); transition: margin-left .28s cubic-bezier(.22,.98,.2,1); }
+  }
+
+  /* Sidebar size */
+  #appSidebar{
+    width: var(--sb-w);
+    background: var(--sb-bg);
+    border-right: 1px solid var(--sb-ring);
+  }
+  @media (max-width: 991.98px){
+    #appSidebar{ width: min(86vw, 320px); }
+  }
+
+  /* Hide Bootstrap backdrop on desktop (we push the layout instead) */
+  @media (min-width: 992px){
+    .offcanvas-backdrop{ display:none !important; }
+  }
+
+  /* Hamburger launcher (show on ALL sizes so desktop can toggle too) */
+  #sbToggle{
+    position: fixed; left: 12px; top: 12px; z-index: 1056;
+    border: 1px solid var(--sb-ring);
+    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+  }
+
+  /* Small visual polish */
+  .sb-brand{
+    display:flex; align-items:center; gap:10px; font-weight:900;
+  }
+  .sb-logo{
+    width:36px; height:36px; border-radius:10px; background:#6f2cff; color:#fff;
+    display:grid; place-items:center;
+  }
+  .sb-user{ border:1px solid var(--sb-ring); }
+  .sb-badge{ font-weight:700; border:1px solid var(--sb-ring); }
+</style>
+
+<!-- Toggle button (works on mobile & desktop) -->
+<button id="sbToggle" class="btn btn-light" type="button"
+        data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="Open menu">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<!-- Sidebar -->
+<div id="appSidebar"
+     class="offcanvas offcanvas-start"
+     data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" aria-labelledby="appSidebarLabel">
+
+  <div class="offcanvas-header border-bottom">
+    <div class="sb-brand">
+      <div class="fs-5"></div>
+    </div>
+    <!-- Show the close button on ALL sizes so desktop can close too -->
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+
+  <div class="offcanvas-body d-flex flex-column pt-3 pb-3">
+    <!-- Quick search (routes to Inventory) -->
+    <div class="input-group mb-3">
+      <span class="input-group-text bg-white border-end-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+      </span>
+      <input id="sbSearch" type="search" class="form-control border-start-0" placeholder="Quick search products…">
+    </div>
+
+    <!-- Nav -->
+    <ul class="nav nav-pills flex-column gap-1 mb-3" id="sbNav">
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="dashboard.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 13l3 3 7-7"/></svg>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center justify-content-between" href="products.html" data-link>
+          <span class="d-flex align-items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Inventory
+          </span>
+          <span id="sbLow" class="badge rounded-pill sb-badge text-bg-warning-subtle d-none">0 low</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="make_sale.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1 7H7z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+          <span>Make sale</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="sales_history.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 13l3 3 7-7"/></svg>
+          <span>Sales history</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center justify-content-between" href="notifications.html" data-link>
+          <span class="d-flex align-items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            Notifications
+          </span>
+          <span id="sbNotif" class="badge rounded-pill sb-badge text-bg-info-subtle d-none">0</span>
+        </a>
+      </li>
+
+      <li><hr class="dropdown-divider my-2"></li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="settings.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V22a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09a1.65 1.65 0 001.51-1z"/></svg>
+          <span>Settings</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2" href="help.html" data-link>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>
+          <span>Help & support</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- User box -->
+    <div class="card sb-user mt-auto">
+      <div class="card-body d-flex align-items-center gap-2">
+        <div id="sbAvatar" class="rounded-3 bg-primary-subtle text-primary-emphasis fw-bold d-inline-grid place-items-center"
+             style="width:38px;height:38px;">S</div>
+        <div class="flex-grow-1">
+          <div id="sbUname" class="fw-bold">—</div>
+          <div id="sbUemail" class="text-muted small">—</div>
+        </div>
+        <button id="sbLogout" class="btn btn-outline-secondary btn-sm">Log out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Keys used across the app
+  const CURRENT_KEY  = 'stockly_current_user';
+  const PRODUCTS_KEY = 'stockly_products_v1';
+  const NOTIFS_KEY   = 'stockly_notifs_v1';
+
+  const ocEl = document.getElementById('appSidebar');
+
+  // When the offcanvas opens/closes, toggle a class on <body> (desktop layout push)
+  ocEl.addEventListener('shown.bs.offcanvas', ()=> document.body.classList.add('sidebar-open'));
+  ocEl.addEventListener('hidden.bs.offcanvas', ()=> document.body.classList.remove('sidebar-open'));
+
+  // Highlight active link
+  const current = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+  document.querySelectorAll('#appSidebar a[data-link]').forEach(a=>{
+    if ((a.getAttribute('href')||'').toLowerCase() === current) a.classList.add('active');
+  });
+
+  // Fill user box
+  let user=null; try{ user = JSON.parse(localStorage.getItem(CURRENT_KEY)||'null'); }catch(e){}
+  const uname = document.getElementById('sbUname');
+  const uemail= document.getElementById('sbUemail');
+  const avatar= document.getElementById('sbAvatar');
+  if(user && user.name){
+    uname.textContent = user.name;
+    uemail.textContent = user.email || '';
+    avatar.textContent = (user.name[0]||'S').toUpperCase();
+  }else{
+    uname.textContent = 'Guest'; uemail.textContent = 'Not signed in'; avatar.textContent='S';
+  }
+
+  // Badges: low/out & notifications
+  (function updateBadges(){
+    const lowEl = document.getElementById('sbLow');
+    const notifEl = document.getElementById('sbNotif');
+
+    let low=0, out=0;
+    try{
+      const prods = JSON.parse(localStorage.getItem(PRODUCTS_KEY)||'[]');
+      const mine  = user?.id ? prods.filter(p=>p.ownerId===user.id) : prods;
+      for(const p of mine){
+        const q = Number(p.qty)||0;
+        if(q===0) out++; else if(q<=4) low++;
+      }
+    }catch(e){}
+    if(low>0 || out>0){
+      lowEl.classList.remove('d-none');
+      lowEl.textContent = `${low} low${out?`, ${out} out`:''}`;
+      if(out>0){ lowEl.classList.add('text-bg-danger-subtle'); }
+    }
+
+    let count=0;
+    try{
+      const ns = JSON.parse(localStorage.getItem(NOTIFS_KEY)||'[]');
+      const since = Date.now() - 30*86400000;
+      count = ns.filter(n => (!user?.id || n.ownerId===user.id) && (n.createdAtMs||0) >= since).length;
+    }catch(e){}
+    if(count>0){
+      notifEl.classList.remove('d-none');
+      notifEl.textContent = String(count);
+    }
+  })();
+
+  // Quick search → Inventory page
+  document.getElementById('sbSearch')?.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){
+      const q = (e.currentTarget.value || '').trim();
+      location.href = q ? ('products.html#q=' + encodeURIComponent(q)) : 'products.html';
+      const oc = bootstrap.Offcanvas.getInstance(ocEl);
+      oc?.hide();
+    }
+  });
+
+  // Logout
+  document.getElementById('sbLogout')?.addEventListener('click', ()=>{
+    localStorage.removeItem(CURRENT_KEY);
+    location.href = 'login.html';
+  });
+})();
+</script>
+
+  <div class="wrap">
+    <header class="topbar">
+      <button class="back" type="button" onclick="location.href='products.html'" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h1 class="title">Sales history</h1>
+      <button class="make" type="button" onclick="location.href='make_sale.html'">Make sale</button>
+    </header>
+
+    <main class="content">
+      <!-- Summary -->
+      <section class="summary">
+        <div class="card">
+          <h4>Today’s sales</h4>
+          <p id="sum-today" class="metric">₵ 0.00</p>
+          <div class="muted"><span id="sum-today-count">0</span> items</div>
+        </div>
+        <div class="card">
+          <h4>This week</h4>
+          <p id="sum-week" class="metric">₵ 0.00</p>
+          <div class="muted"><span id="sum-week-count">0</span> items</div>
+        </div>
+        <div class="card">
+          <h4>All-time total</h4>
+          <p id="sum-all" class="metric">₵ 0.00</p>
+          <div class="muted"><span id="sum-all-count">0</span> items</div>
+        </div>
+      </section>
+
+      <!-- Filters -->
+      <section class="filters">
+        <div class="row">
+          <div class="search">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="q" type="search" placeholder="Search by product…" />
+          </div>
+          <input id="from" class="input" type="date" />
+          <input id="to" class="input" type="date" />
+          <div style="display:flex;gap:8px">
+            <button id="clear" class="btn" type="button" title="Clear filters">Clear</button>
+            <button id="exportCsv" class="btn btn-primary" type="button" title="Download CSV">Export CSV</button>
+          </div>
+        </div>
+        <div class="muted">Tip: set one or both dates to limit the results. Export obeys current filters.</div>
+      </section>
+
+      <!-- List -->
+      <section id="container"></section>
+      <div id="empty" class="empty" style="display:none">No sales yet.</div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast">CSV exported.</div>
+
+<script>
+  // Keys
+  const CURRENT_KEY  = 'stockly_current_user';
+  const SALES_KEY    = 'stockly_sales_v1';
+
+  // Guard
+  let current = null;
+  try { current = JSON.parse(localStorage.getItem(CURRENT_KEY)||'null'); } catch(e){}
+  if(!current){ location.href = 'login.html'; }
+
+  // IO
+  function readSales(){ try { return JSON.parse(localStorage.getItem(SALES_KEY)) || []; } catch(e){ return []; } }
+
+  // Helpers
+  const fmtMoney = n => `₵ ${Number(n||0).toFixed(2)}`;
+  const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const isSameDay = (a,b) => startOfDay(a).getTime() === startOfDay(b).getTime();
+  const dayKey = d => {
+    const y=d.getFullYear(), m=(d.getMonth()+1+'').padStart(2,'0'), dd=(d.getDate()+'').padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  };
+  const labelForDay = d => {
+    const today = new Date(), yest = new Date(Date.now()-86400000);
+    if(isSameDay(d, today)) return 'Today';
+    if(isSameDay(d, yest)) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric', year: d.getFullYear()!==today.getFullYear() ? 'numeric' : undefined });
+  };
+
+  // Elements
+  const qEl = document.getElementById('q');
+  const fromEl = document.getElementById('from');
+  const toEl = document.getElementById('to');
+  const clearEl = document.getElementById('clear');
+  const exportEl = document.getElementById('exportCsv');
+  const container = document.getElementById('container');
+  const emptyEl = document.getElementById('empty');
+
+  const sumTodayEl = document.getElementById('sum-today');
+  const sumTodayCountEl = document.getElementById('sum-today-count');
+  const sumWeekEl = document.getElementById('sum-week');
+  const sumWeekCountEl = document.getElementById('sum-week-count');
+  const sumAllEl = document.getElementById('sum-all');
+  const sumAllCountEl = document.getElementById('sum-all-count');
+
+  const toast = document.getElementById('toast');
+
+  // Data cache
+  let all = [];      // all for this owner
+  let filtered = []; // current filtered
+
+  function load(){
+    all = readSales().filter(s => s.ownerId === current.id)
+                     .sort((a,b) => (b.createdAtMs||0) - (a.createdAtMs||0));
+    applyFilters();
+    updateSummary();
+  }
+
+  function applyFilters(){
+    const term = (qEl.value||'').toLowerCase().trim();
+    const from = fromEl.value ? new Date(fromEl.value+'T00:00:00') : null;
+    const to   = toEl.value   ? new Date(toEl.value+'T23:59:59') : null;
+
+    filtered = all.filter(s => {
+      if(term && !(s.product?.name||'').toLowerCase().includes(term)) return false;
+      const t = new Date(s.createdAt || s.createdAtMs || Date.now());
+      if(from && t < from) return false;
+      if(to && t > to) return false;
+      return true;
+    });
+
+    renderList();
+  }
+
+  function renderList(){
+    container.innerHTML = '';
+    if(!filtered.length){ emptyEl.style.display='block'; return; }
+    emptyEl.style.display='none';
+
+    // group by daykey
+    const groups = new Map();
+    for(const s of filtered){
+      const d=new Date(s.createdAt||s.createdAtMs||Date.now());
+      const k=dayKey(d);
+      if(!groups.has(k)) groups.set(k,{date:d, items:[]});
+      groups.get(k).items.push(s);
+    }
+
+    for(const [k, g] of groups){
+      const section=document.createElement('section');
+      section.className='group';
+      const h=document.createElement('h3');
+      h.className='ghead';
+      h.textContent = labelForDay(g.date);
+      section.appendChild(h);
+
+      const list=document.createElement('div');
+      list.className='list';
+
+      g.items.forEach(s=>{
+        const row=document.createElement('div');
+        row.className='rowitem';
+        const time = new Date(s.createdAt||s.createdAtMs).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        row.innerHTML = `
+          <img class="thumb" src="${s.product?.image||''}" alt="" onerror="this.style.display='none'">
+          <div>
+            <div class="name">${s.product?.name||'Product'}</div>
+            <div class="sub">${s.qty} × ${fmtMoney(s.unitPrice)} • ${time}</div>
+          </div>
+          <div class="total">${fmtMoney(s.total)}</div>
+        `;
+        list.appendChild(row);
+      });
+
+      section.appendChild(list);
+      container.appendChild(section);
+    }
+  }
+
+  function updateSummary(){
+    const today = startOfDay(new Date()).getTime();
+    const weekStart = (()=>{
+      const d = new Date();
+      const day = (d.getDay()+6)%7; // week starts Monday
+      d.setHours(0,0,0,0);
+      d.setDate(d.getDate()-day);
+      return d.getTime();
+    })();
+
+    let tSum=0, tCount=0, wSum=0, wCount=0, aSum=0, aCount=0;
+
+    for(const s of all){
+      const ts = s.createdAtMs || new Date(s.createdAt||Date.now()).getTime();
+      aSum += Number(s.total)||0; aCount += Number(s.qty)||0;
+      if(ts >= weekStart){ wSum += Number(s.total)||0; wCount += Number(s.qty)||0; }
+      if(startOfDay(new Date(ts)).getTime() === today){ tSum += Number(s.total)||0; tCount += Number(s.qty)||0; }
+    }
+
+    sumTodayEl.textContent = fmtMoney(tSum);
+    sumTodayCountEl.textContent = tCount;
+    sumWeekEl.textContent = fmtMoney(wSum);
+    sumWeekCountEl.textContent = wCount;
+    sumAllEl.textContent = fmtMoney(aSum);
+    sumAllCountEl.textContent = aCount;
+  }
+
+  // CSV export (honors filters)
+  function exportCSV(){
+    if(!filtered.length){
+      toast.textContent='Nothing to export for current filters.'; toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'),1500);
+      return;
+    }
+    const headers = ['Date','Time','Product','Quantity','Unit Price','Total'];
+    const rows = filtered.map(s=>{
+      const d=new Date(s.createdAt||s.createdAtMs||Date.now());
+      const date=d.toLocaleDateString();
+      const time=d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      return [
+        date, time, (s.product?.name||''),
+        String(s.qty), (Number(s.unitPrice)||0).toFixed(2), (Number(s.total)||0).toFixed(2)
+      ];
+    });
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    a.download = `stockly_sales_${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+
+    toast.textContent='CSV exported.'; toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'),1500);
+  }
+
+  // Events
+  qEl.addEventListener('input', applyFilters);
+  fromEl.addEventListener('change', applyFilters);
+  toEl.addEventListener('change', applyFilters);
+  clearEl.addEventListener('click', ()=>{ qEl.value=''; fromEl.value=''; toEl.value=''; applyFilters(); });
+  exportEl.addEventListener('click', exportCSV);
+
+  // Init
+  load();
+</script>
+
+</body>
+</html>

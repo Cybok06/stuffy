@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Welcome • Stuffy</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --ink:#171717;
+      --muted:#6b7280;
+      --primary:#6f2cff;        /* purple CTA */
+      --primary-2:#5b22d1;
+      --dot:#d9d2ff;
+      --dot-active:#6f2cff;
+      --ring:#ececf3;
+      --shadow:0 8px 30px rgba(0,0,0,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+    }
+
+    .wrap{
+      min-height:100dvh;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:flex-start;
+      padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      gap:22px;
+    }
+
+    /* Illustration (no background shapes) */
+    .illu{
+      margin-top:12px;
+      width:min(520px, 88vw);
+      display:grid; place-items:center;
+    }
+    .hero-img{
+      width:86%;
+      height:auto;
+      display:block;
+      object-fit:contain;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,.06));
+    }
+
+    h1{
+      margin:6px 0 8px; text-align:center;
+      font-size:28px; line-height:1.15; font-weight:700;
+      letter-spacing:.2px;
+    }
+    .lead{
+      color:var(--muted); text-align:center;
+      font-size:16px; line-height:1.55;
+      max-width:640px; margin:0 auto;
+      padding:0 6px;
+    }
+
+    /* Pager dots */
+    .dots{
+      display:flex; align-items:center; justify-content:center;
+      gap:10px; margin:22px 0 6px;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background:var(--dot); transition:all .2s ease;
+    }
+    .dot.active{
+      background:var(--dot-active);
+      transform: scale(1.1);
+      box-shadow: 0 0 0 6px rgba(111,44,255,.10);
+    }
+
+    /* Buttons */
+    .actions{
+      width:100%;
+      max-width:640px;
+      display:grid; gap:12px;
+      margin-top:10px;
+    }
+    .btn{
+      -webkit-tap-highlight-color: transparent;
+      border:1px solid transparent;
+      border-radius:16px; padding:16px 18px;
+      font-weight:700; font-size:16px;
+      text-align:center; cursor:pointer;
+      box-shadow: var(--shadow);
+    }
+    .btn-primary{
+      background:var(--primary); color:#fff;
+    }
+    .btn-primary:hover{ background:var(--primary-2) }
+    .btn-primary:active{ transform: translateY(1px) }
+    .btn-ghost{
+      background:#fff; color:var(--ink); border:1px solid var(--ring);
+    }
+    .btn-ghost:hover{ background:#fafafa }
+
+    @media (max-width:420px){
+      h1{ font-size:24px }
+      .lead{ font-size:15px }
+      .actions .btn{ padding:15px 16px }
+    }
+
+    /* ===== Slide-in-from-left animations ===== */
+    .reveal{
+      opacity:0;
+      transform: translateX(-40px);
+      will-change: transform, opacity;
+    }
+    .loaded .reveal{
+      animation: slideInLeft .6s cubic-bezier(.22,.98,.2,1) forwards;
+      animation-delay: var(--delay, 0s);
+    }
+    @keyframes slideInLeft{
+      0%   { opacity:0; transform: translateX(-40px); }
+      100% { opacity:1; transform: translateX(0); }
+    }
+    /* Respect users who prefer reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .reveal{ opacity:1; transform:none }
+      .loaded .reveal{ animation:none }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Illustration -->
+    <div class="illu reveal" style="--delay:.00s">
+      <img class="hero-img" src="images/welcome_2.png" alt="Tablet with growing bar chart and money icons" />
+    </div>
+
+    <!-- Content -->
+    <h1 class="reveal" style="--delay:.10s">Know What’s In Stock</h1>
+    <p class="lead reveal" style="--delay:.18s">
+      Add items in seconds and get instant low-stock alerts. No more surprises —
+      you’re always in control.
+    </p>
+
+    <!-- Pager -->
+    <div class="dots reveal" style="--delay:.26s" role="tablist" aria-label="Onboarding progress">
+      <span class="dot" aria-label="Step 1 of 3"></span>
+      <span class="dot active" aria-current="step" aria-label="Step 2 of 3"></span>
+      <span class="dot" aria-label="Step 3 of 3"></span>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions reveal" style="--delay:.34s">
+      <button id="btnNext" class="btn btn-primary" type="button">Next</button>
+      <button id="btnSkip" class="btn btn-ghost" type="button">Skip</button>
+    </div>
+  </div>
+
+  <script>
+    // Trigger slide-in animations after paint
+    document.addEventListener('DOMContentLoaded', () => {
+      // small rAF ensures CSS is applied before we add the 'loaded' class
+      requestAnimationFrame(() => document.body.classList.add('loaded'));
+    });
+
+    // Onboarding state in LocalStorage
+    const KEY_STEP = 'stockly_onboarding_step';
+    const KEY_DONE = 'stockly_onboarding_done';
+
+    // Destinations
+    const NEXT_URL = 'welcome_3.html';           // update if your next file name differs
+    const DASHBOARD_URL = 'index.html#/dashboard';
+
+    // Mark current step
+    try { localStorage.setItem(KEY_STEP, '2'); } catch(e){}
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+      try { localStorage.setItem(KEY_STEP, '3'); } catch(e){}
+      location.href = NEXT_URL;
+    });
+
+    document.getElementById('btnSkip').addEventListener('click', () => {
+      try {
+        localStorage.setItem(KEY_DONE, 'true');
+        localStorage.removeItem(KEY_STEP);
+      } catch(e){}
+      location.href = DASHBOARD_URL;
+    });
+  </script>
+</body>
+</html>
